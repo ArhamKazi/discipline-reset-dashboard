@@ -3,16 +3,51 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import date
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from datetime import timedelta
+from datetime import datetime
+import os
 
 from database import SessionLocal, engine
 from models import Base, DailyLog
 
 Base.metadata.create_all(bind=engine)
+from models import User
+
+db = SessionLocal()
+if not db.query(User).filter(User.username == "admin").first():
+    admin_user = User(
+        username="admin",
+        password_hash=hash_password("admin123")
+    )
+    db.add(admin_user)
+    db.commit()
+db.close()
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    db = SessionLocal()
+    user = db.query(User).filter(User.username == form_data.username).first()
+    db.close()
 
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password"
+        )
+
+    access_token = create_access_token(
+        data={"sub": user.username},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
 def get_db():
     db = SessionLocal()
     try:
@@ -39,7 +74,24 @@ def calculate_compliance(logs):
     return round((total_points / max_points) * 100, 2)
 
 
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Invalid credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    return username
+
+
 @app.get("/", response_class=HTMLResponse)
+def dashboard(request: Request, user: str = Depends(get_current_user)):
 def dashboard(request: Request):
     db: Session = next(get_db())
     logs = db.query(DailyLog).all()
@@ -179,3 +231,21 @@ def add_log(
     db.commit()
 
     return RedirectResponse("/", status_code=303)
+
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecretdevkey")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def hash_password(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

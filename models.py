@@ -1,6 +1,14 @@
 from sqlalchemy import Column, Integer, Boolean, Float, Date
 from database import Base
 from sqlalchemy import String
+from sqlalchemy import String
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    password_hash = Column(String)
 
 class DailyLog(Base):
     __tablename__="daily_logs"
