@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Discipline Dashboard</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+
+    h1, h2, h3 {
+        color: #ffffff;
+    }
+
+    .top-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .card {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        padding: 20px;
+        width: 48%;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    hr {
+        border: 1px solid #333;
+        margin: 25px 0;
+    }
+
+    .form-section {
+        margin-top: 20px;
+        background-color: #1e1e1e;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #333;
+    }
+
+    input[type="number"], input[type="text"] {
+        background-color: #2a2a2a;
+        color: #fff;
+        border: 1px solid #444;
+        padding: 5px;
+        margin-bottom: 8px;
+        border-radius: 4px;
+    }
+
+    input[type="checkbox"] {
+        transform: scale(1.1);
+        margin-bottom: 8px;
+    }
+
+    button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    table {
+        margin-top: 25px;
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    table, th, td {
+        border: 1px solid #333;
+    }
+
+    th {
+        background-color: #2a2a2a;
+        color: #ffffff;
+        padding: 8px;
+    }
+
+    td {
+        padding: 6px;
+        text-align: center;
+    }
+    </style>
+</head>
+<body>
+
+<h1>Discipline Dashboard</h1>
+
+<div class="top-container">
+
+    <!-- Discipline Card -->
+    <div class="card">
+        <h2>Discipline Summary</h2>
+        <p>Today's Score: {{ today_score }}/6</p>
+        <p>Compliance: {{ compliance }}%</p>
+        <p>Total Gym Sessions: {{ total_gym }}</p>
+        <p>Total Applications: {{ total_apps }}</p>
+        <p>Gaming Violations: {{ gaming_violations }}</p>
+
+        <h3>Streaks</h3>
+        <p>Wake Streak: {{ wake_streak }} days</p>
+        <p>No Gaming Streak: {{ gaming_streak }} days</p>
+        <p>Full Compliance Streak: {{ full_streak }} days</p>
+    </div>
+
+    <!-- Weight Card -->
+    <div class="card">
+        <h2>Weight Tracking</h2>
+        <p>Start Weight: {{ start_weight }}</p>
+        <p>Current Weight: {{ current_weight }}</p>
+        <p>Total Change: {{ weight_change }}</p>
+        <p>7-Day Average: {{ weekly_avg }}</p>
+    </div>
+
+</div>
+
+<hr>
+
+<div class="form-section">
+    <h2>Add / Update Today’s Log</h2>
+    <form method="post" action="/add">
+        <label>Wake on Time:</label>
+        <input type="checkbox" name="wake_on_time"><br>
+
+        <label>Sleep on Time:</label>
+        <input type="checkbox" name="sleep_on_time"><br>
+
+        <label>Gym:</label>
+        <input type="checkbox" name="gym"><br>
+
+        <label>Applications Done:</label>
+        <input type="number" name="applications_done"><br>
+
+        <label>Learning Minutes:</label>
+        <input type="number" name="learning_minutes"><br>
+
+        <label>Gaming Violation:</label>
+        <input type="checkbox" name="gaming_violation"><br>
+
+        <label>Salah Count:</label>
+        <input type="number" name="salah_count"><br>
+
+        <label>Weight:</label>
+        <input type="number" step="0.1" name="weight"><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+</div>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Wake</th>
+        <th>Sleep</th>
+        <th>Gym</th>
+        <th>Apps</th>
+        <th>Learn</th>
+        <th>Gaming</th>
+        <th>Salah</th>
+        <th>Weight</th>
+    </tr>
+    {% for log in logs %}
+    <tr>
+        <td>{{ log.date }}</td>
+        <td>{{ log.wake_on_time }}</td>
+        <td>{{ log.sleep_on_time }}</td>
+        <td>{{ log.gym }}</td>
+        <td>{{ log.applications_done }}</td>
+        <td>{{ log.learning_minutes }}</td>
+        <td>{{ log.gaming_violation }}</td>
+        <td>{{ log.salah_count }}</td>
+        <td>{{ log.weight }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>
