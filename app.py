@@ -84,6 +84,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 from fastapi import Cookie
 
+from fastapi.responses import RedirectResponse
+
 def get_current_user(
     request: Request,
     token: str = Depends(oauth2_scheme),
@@ -93,15 +95,15 @@ def get_current_user(
         token = access_token
 
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        return RedirectResponse("/login", status_code=303)
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            return RedirectResponse("/login", status_code=303)
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        return RedirectResponse("/login", status_code=303)
 
     return username
 
@@ -135,7 +137,9 @@ def login_form(request: Request, username: str = Form(...), password: str = Form
 # =======================
 
 @app.get("/", response_class=HTMLResponse)
-def dashboard(request: Request, user: str = Depends(get_current_user)):
+def dashboard(request: Request, user = Depends(get_current_user)):
+    if isinstance(user, RedirectResponse):
+        return user
     db: Session = SessionLocal()
     logs = db.query(DailyLog).all()
 
